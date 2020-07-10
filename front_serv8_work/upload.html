@@ -1,0 +1,337 @@
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>загрузчик при помощи javascript/python </title>
+<a href="/" style="position:absolute;">назад</a>
+<body style="margin: 0;color: #9d9d9d;background: #fafafa!important;font-family:Arial;">
+		<div id="UploadBox">
+			<h2>Загрузчик</h2>
+			<span id='UploadArea'>
+				<label for="FileBox">Выберите файл: </label><input type="file" id="FileBox"><br>
+				<!--<label for="NameBox">Класс: </label><input type="text" id="NameBox" placeholder="URL ссылка"><br>-->
+                                <label for="SE">Выберите класс: </label><select id="SE"></select>
+    <div>
+    <label>Выберите тип: </label>                            
+    <input type="checkbox" id="typeBox" name="typeBox" value="4" onclick="selectOnlyThis(this)">
+    <label for="typeBox">4x4</label>
+    <input type="checkbox" id="typeBox" name="typeBox" value="3" onclick="selectOnlyThis(this)">
+    <label for="typeBox">3x3</label>
+    <input type="checkbox" id="typeBox" name="typeBox" value="1" onclick="selectOnlyThis(this)">
+    <label for="typeBox">1x1</label>
+    </div> 
+				<button	type='button' id='UploadButton' class='Button'>Загрузить</button>
+			</span>
+                        <button	type='button' id='Process' class='Button'>Обработать</button>
+		</div>
+
+    </body>
+		
+		<script type="text/javascript" charset="utf-8">
+
+//-----------------------------
+
+
+
+
+		      String.prototype.unescapeHtml = function () {
+			  var temp = document.createElement("div");
+			  temp.innerHTML = this;
+			  var result = temp.childNodes[0].nodeValue;
+			  temp.removeChild(temp.firstChild);
+			  return result;
+		      }
+
+		      var text = '{{items}}';
+		      var obj = JSON.parse(text.unescapeHtml());
+
+		      var HJ = document.getElementById("SE");
+		      for (let x = 0; x < Object.keys(obj).length; x ++) {
+			  HJ.options[x] = new Option(Object.keys(obj)[x], obj[Object.keys(obj)[x]]);
+			  //console.log(HJ.options[x].value);
+		      };
+
+//-----------------------------
+
+
+
+			window.addEventListener("load", Ready);
+			function Ready(){
+				if(window.File && window.FileReader){ //These are the necessary HTML5 objects the we are going to use
+					document.getElementById('UploadButton').addEventListener('click', StartUpload);
+					document.getElementById('FileBox').addEventListener('change', FileChosen);
+				}
+				else
+				{
+					document.getElementById('UploadArea').innerHTML = "Your Browser Doesn't Support The File API Please Update Your Browser";
+				}
+			}
+			var SelectedFile;
+                        var fileSize;
+                        var ws = new WebSocket("ws://178.158.131.41:8800/websocket");
+                        var PR;
+                        var sPR;
+                        var UploadBox = document.getElementById("UploadBox");
+                        var b_process = document.getElementById("Process");
+                        var ob_class;
+                        var sjs;
+                        var B_type;
+                        var nmb;
+/****/
+function calculateCheckbox() {
+  // get beauty products checkboxes contianer's reference
+  var el = document.getElementById('UploadBox');
+
+  // get beauty product input element refrence in beautyProducts container
+  var products = el.getElementsByTagName('input');
+
+  // get products length
+  var len = products.length;
+
+  // call updateCost() function to onclick event on every checkbox
+  for (var i = 0; i < len; i++) {
+    if (products[i].type === 'checkbox') {
+        if (products[i].checked == true){
+            B_type = products[i].value;
+         };
+      };
+  }
+  
+}
+
+
+function selectOnlyThis(id){
+  if (id.checked) {
+    B_type = id.value;
+    //console.log(id.value);
+  }
+  var myCheckbox = document.getElementsByName("typeBox");
+  Array.prototype.forEach.call(myCheckbox,function(el){
+  	el.checked = false;
+  });
+  id.checked = true;
+};
+			HJ.onchange = function(){
+				    var result = HJ.options[HJ.selectedIndex].value;
+				    var newKey = HJ.options[HJ.selectedIndex].text;
+				    ob_class = newKey; 
+				    //console.log(result, newKey);
+                                    
+			};
+
+                        b_process.style.display = "none";
+                        UploadBox.style.display = "block";
+                        ws.binaryType = 'arraybuffer';
+			function FileChosen(evnt) {
+		                SelectedFile = evnt.target.files[0];
+				//document.getElementById('NameBox').value = SelectedFile.name;
+                                fileSize = SelectedFile.size;
+
+		        }
+
+
+			
+                        //ws.binaryType = 'arraybuffer';
+                        ws.onopen = function() {
+                            console.log("connection was established");
+                        };
+                         calculateCheckbox();
+                         b_process.onclick = function my() {
+                            //console.log(B_type==undefined);
+                            if (B_type==undefined){
+                              ob_class = HJ.options[HJ.selectedIndex].text;
+                              b_process.style.display = "none";
+                              nmb = 0;
+                        
+                              ws.send(JSON.stringify({"Process": "Process", "task": ob_class, 'type': 1}));  
+                            } else {
+                              ob_class = HJ.options[HJ.selectedIndex].text;
+                              b_process.style.display = "none";
+                              nmb = 0;
+                        
+                              ws.send(JSON.stringify({"Process": "Process", "task": ob_class, 'type': B_type}));  
+                            }
+                             
+                         }
+
+
+
+
+			function StartUpload(){
+				if(document.getElementById('FileBox').value != "")
+				{
+					//FReader = new FileReader();
+                                     if (ob_class != "") {
+					var Content = "<span id='NameArea'>" + SelectedFile.name + "</span>";
+					Content += '<div id="ProgressContainer"><div id="ProgressBar"></div></div><span id="percent">50%</span>';
+                                        if (SelectedFile.size/1000 < 1.0) {
+					   Content += "<span id='Uploaded'> - <span id='MB'>0</span>/" + fileSize + " B</span>";
+                                        } else {
+                                           Content += "<span id='Uploaded'> - <span id='MB'>0</span>/" + fileSize / 1000000.0 + " MB</span>";
+                                        };
+					document.getElementById('UploadArea').innerHTML = Content;
+                                        
+                                        ws.send(JSON.stringify({'Start': { 'Name' : SelectedFile.name, 'Size' : fileSize }}));
+                                        totalChunks = Math.ceil((fileSize/chunkSize), chunkSize);
+                                        //console.log(totalChunks)
+                                        sPR = 0;
+                                        PR = (fileSize/totalChunks)/1000000.0
+                                        UpdateBar(0);
+                                        console.log("Event Start");
+                                        } else { alert("Нужно задание"); }
+					
+                                        
+				}
+				else
+				{
+					alert("Нужно выбрать файл");
+				}
+			}
+
+			function UpdateBar(percent){
+                                document.getElementById('ProgressBar').style.width = percent + '%';
+				document.getElementById('percent').innerHTML = (Math.round(percent*100.0)/100.0) + '%';
+                                sPR = sPR + PR;                  
+                                var MBDone = sPR-PR;
+				document.getElementById('MB').innerHTML = MBDone;
+			}
+
+
+
+                        var chunkSize = 1024.0 * 1024.0;
+                        var currentChunk = 1.0;
+                        var totalChunks;
+                        var ratio = 1;
+
+                        
+                        ws.onmessage = function(data) {
+                                
+                                sjs = JSON.parse(data.data);
+                                if (sjs["Process"] == "MoreData") {
+                                        if (currentChunk <= totalChunks) {
+                                                
+                                                var offset = (currentChunk-1.0) * chunkSize;
+                                                
+                                                var currentFilePart = SelectedFile.slice(offset, (offset+chunkSize));
+                                                var reader = new FileReader();
+                                                reader.onload = function (e) {
+                                                       UpdateBar(Math.ceil((currentChunk*100.0)/totalChunks));
+                                                       ws.send(JSON.stringify({'Upload': { 'Name' : 'more', 'Data' : e.target.result }}));
+                                                       currentChunk++;
+                                                }
+                                                reader.readAsDataURL(currentFilePart);
+                                        } else {ws.send(JSON.stringify({'Done': "Done"}));};
+                                } else if (sjs["Process"] == "Process") {
+                                       b_process.style.display = "block";
+                                    
+                                } else if (sjs["Process"] == "load") {  
+                                     //console.log(nmb);
+                                     if ( nmb & 1 ) {
+                                       
+                                       document.getElementById('UploadArea').innerHTML = "Подготовка";
+                                     } else {
+                                       document.getElementById('UploadArea').innerHTML = "Подготовка...";
+                                     };
+                                     nmb += 1;
+                                } else {
+                                       document.getElementById('UploadArea').innerHTML = "Подготовка закончена";
+                                };
+                        };
+
+
+
+		</script>
+		<style type="text/css" media="screen">
+
+
+h2 {
+	font-size: 40px;
+	margin-top: 6px;
+	margin-bottom: 10px;
+}
+
+#Thumb {
+	max-width: 230px;
+	max-height: 130px;
+}
+
+#ProgressContainer {
+	width: 396px;
+	height: 36px;
+	background: #F8F8F8;
+	margin-top: 14px;
+	border: 1px solid #E8E8E8;
+	border-top: 1px solid #D8D8D8;
+
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	padding: 2px;
+}
+
+#ProgressBar {
+	height: 100%;
+	width: 0%;
+
+	-webkit-border-radius: 4px;
+	-moz-border-radius: 4px;
+	border-radius: 4px;
+	background: #507299;
+}
+
+#UploadBox {
+    font-family: Arial;
+	background: #FFF;
+	padding: 20px;
+	position: absolute;
+	top: 20%;
+	left: 50%;
+	margin-left: -200px;
+	margin-top: -150px;
+	height: auto;
+	width: 400px;
+	border: 1px solid #DFDFDF;
+
+	-webkit-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+	-moz-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+	box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+
+	-webkit-border-radius: 11px;
+	-moz-border-radius: 11px;
+	border-radius: 11px;
+}
+
+
+
+button.Button {
+    font-size: 18px;
+    color: #ffffff;
+    padding: 8px 30px;
+    background: #507299;
+    -moz-border-radius: 5px;
+    border-radius: 6px;
+    border: none;
+    -moz-box-shadow: 0px 1px 3px rgba(000,000,000,0.5), inset 0px 0px 3px rgba(255,255,255,0.4);
+    margin: 15px auto;
+    display: block;
+    cursor: pointer;
+}
+input {
+	margin-top: 10px;
+	margin-bottom: 8px;
+}
+
+input[type=text] {
+	border: 1px solid #CDCDCD;
+	border-top: 1px solid #676767;
+
+	-webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+	font-size: 18px;
+	padding: 2px;
+	width: 300px;
+	margin-left: 10px;
+}
+
+		</style>
+

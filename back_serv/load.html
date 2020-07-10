@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html>
+<a href="/" style="position:absolute;">назад</a>
+  <body>
+<div id="SeeBox">
+    <h3>4x4</h3>
+    <select id="SE">
+    </select>
+
+
+    <div id="task"></div>
+
+</div>
+
+<script>
+      String.prototype.unescapeHtml = function () {
+          var temp = document.createElement("div");
+          temp.innerHTML = this;
+          var result = temp.childNodes[0].nodeValue;
+          temp.removeChild(temp.firstChild);
+          return result;
+      }
+
+      var text = '{{items}}';
+      var obj = JSON.parse(text.unescapeHtml());
+      //console.log(Object.keys(obj).length);
+      var HJ = document.getElementById("SE");
+      for (let x = 0; x < Object.keys(obj).length; x ++) {
+          //console.log(Object.keys(obj)[x]);
+          //console.log(obj[Object.keys(obj)[x]]);
+          HJ.options[x] = new Option(Object.keys(obj)[x], obj[Object.keys(obj)[x]]);
+          //console.log(HJ.options[x].value);
+      };
+      function updateTextInput(x) {
+            document.getElementById('COL').innerHTML = x;
+            var btn = document.createElement("BUTTON");
+            btn.setAttribute("id", "btn_id");
+            btn.setAttribute("onclick", "doDownload("+ x +")");
+            btn.innerHTML = "скачать"; 
+            if (task.childNodes.length == 1) {
+
+              task.appendChild(btn);
+            //btn.replaceChild(btn, btn);
+            } else {
+               task.replaceChild(btn, task.lastElementChild);
+               //console.log(task.lastElementChild) 
+            };
+            //console.log(task.childNodes[1]);
+      };
+      function doDownload(x) {
+            var btn = document.getElementById("btn_id").style.display = "none";        
+            //console.log(x, HJ.options[HJ.selectedIndex].text);
+            var http = new XMLHttpRequest();
+            http.open("POST", "http://178.158.131.41:8800/load");
+            http.setRequestHeader("Content-type","application/json; charset=utf-8");
+	    http.onreadystatechange = function (){
+		if(http.readyState == 4){
+                        
+                        var s = JSON.parse(http.responseText);
+                        console.log(s["csv"], s["arch"]);
+
+                        var btn = document.createElement("a");
+                        btn.href = "http://178.158.131.41:8800/"+s["csv"];
+                        btn.innerHTML = s["csv"];
+                        task.appendChild(btn);
+                        var btn1 = document.createElement("a");
+                        btn1.href = "http://178.158.131.41:8800/"+s["csv"];
+                        btn1.innerHTML = s["arch"];
+                        task.appendChild(btn1);
+                        
+                     
+                };
+		
+	    };
+            http.send(JSON.stringify({"st":"load", "task":HJ.options[HJ.selectedIndex].text, "load_count":x}));
+      };
+
+
+      var task = document.getElementById('task');
+      HJ.onchange = function(){
+            var result = HJ.options[HJ.selectedIndex].value;
+            var newKey = HJ.options[HJ.selectedIndex].text;
+            task.innerHTML = "";//result;
+            console.log(result, newKey); 
+            var http = new XMLHttpRequest();
+            http.open("POST", "http://178.158.131.41:8800/load");
+            http.setRequestHeader("Content-type","application/json; charset=utf-8");
+	    http.onreadystatechange = function (){
+		if(http.readyState == 4){
+                        var s = JSON.parse(http.responseText);
+                        console.log(s["answ_H_new"],s["answ_L"], s["answ_V"]);
+
+                    var newDiv = document.createElement("div");
+                        newDiv.innerHTML = "<p><span>all data" + newKey + ":</span> "+result+"</p><p><span> new human V: </span>"+s["answ_H_new"] + "</p><p><span> answer L: </span>" + s["answ_L"] + "</p><p><span> answer V: </span>" + s["answ_V"] +"</p><div><input type='range' id='start' onchange='updateTextInput(this.value);'name='volume' min='0' max='"+ s["answ_H_new"] +"'value='0' step='1'><label for='volume'>Количество: <span id='COL'></span></label></div>";
+                        task.appendChild(newDiv); 
+                     
+                };
+		
+	    };
+            http.send(JSON.stringify({"st":"prep", "task":newKey}));
+      };
+      /*
+      innerHTML =
+          obj.name + "<br>" +
+          obj.street + "<br>" +
+          obj.phone;*/
+</script>
+</body>
+
+<style type="text/css" media="screen">
+/*<h1 style="display:block;font-family: Arial;margin: 10 auto;position: relative;width: 700px;text-align: center;">подготовка загрузки данных</h1>*/
+#SeeBox span{
+font-weight: bold;
+}
+#task a{
+display:block;
+}
+
+#SeeBox {
+    font-family: Arial;
+    background: #FFF;
+    padding: 20px;
+    position: relative;
+    height: auto;
+    width: 412px;
+    border: 1px solid #DFDFDF;
+    -webkit-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -webkit-border-radius: 11px;
+    -moz-border-radius: 11px;
+    border-radius: 11px;
+    margin: 0 auto;
+}
+
+</style>
+</html>

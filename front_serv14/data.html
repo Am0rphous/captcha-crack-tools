@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>Данные </title>
+       </head>
+<a href="/" id="ButtBack">назад</a>
+<body style="margin: 0;color: #9d9d9d;background: #fafafa!important;font-family:Arial;">
+
+
+                <div id="Info" style="font-family: Roboto,helvetica,arial,sans-serif;">
+                    <ul id="list_db"> </ul>
+                </div>
+                
+
+         
+<div id="b-popup">
+                <div id="SeeBox"style="font-family: Roboto,helvetica,arial,sans-serif;">
+                     <div id="task"></div>
+                     <canvas id='example'>Обновите браузер</canvas>
+                     
+                     <button id='SeeDataButt'>дальше</button>
+                     <img id="IN" src="http://178.158.131.41:8880/index.png" style="display:none;">
+                </div>
+
+    <div id="b-popup-content">
+    </div>
+    <div class="pv_close_btn" onclick="Close(0)" style="display: block;"></div>
+</div>
+                    
+</body>
+</html>
+
+<script type="text/javascript" charset="utf-8">
+var ws = new WebSocket("ws://178.158.131.41:8880/websocket");
+document.getElementById('SeeBox').style.display = "none";
+//------------------->
+//Visual
+var img = new Image();
+var canvas = document.getElementById("example");
+var ctx = canvas.getContext('2d');
+var part;
+var coorAns = []; 
+var ans_v =[];
+var B_type; 
+var idxx;
+var b_popup = document.getElementById('b-popup');
+var b_popup_content = document.getElementById('b-popup-content');
+
+var seeBt = document.getElementById('SeeDataButt');
+var taskS = document.getElementById('task');
+taskS.style.display = "none";
+b_popup.style.display = "none";
+//------------------->
+function getMousePos(canvas, evt){
+   var rect = canvas.getBoundingClientRect();
+   return {x: evt.clientX - rect.left,
+           y: evt.clientY - rect.top};
+};
+
+
+function getAnswHuman(mousePos){
+   for (var i = 0; i < coorAns.length; i++) {
+       if ((mousePos.x>coorAns[i][0])&&(mousePos.y>coorAns[i][1])&&(mousePos.x<coorAns[i][2])&&(mousePos.y<coorAns[i][3])) {
+             return i; 
+       };
+   };
+};
+
+
+function showANSW(a, RGB) {
+          ctx.clearRect(0, 0, canvas.width, canvas.height);
+          ctx.drawImage(img, 0, 0);
+          
+          DrawLineCap()
+          ctx.fillStyle = RGB;
+          for (let x = 0; x < ans_v.length; x ++) { 
+               if (a[x]==1) {
+                   ctx.beginPath();
+                   ctx.fillRect(coorAns[x][0], coorAns[x][1], part, part);
+                   ctx.stroke();
+                   ctx.drawImage(img, coorAns[x][0], coorAns[x][1], part, part, coorAns[x][0]+(part-(part/1.3))/2, coorAns[x][1]+(part-(part/1.3))/2, part/1.3, part/1.3);
+                   ctx.drawImage(document.getElementById('IN'),coorAns[x][0], coorAns[x][1]);
+                };
+           }
+           seeBt.innerText='дальше';
+}
+
+
+function DrawLineCap(){
+       ctx.beginPath();
+       for (let x = 0; x < 412; x += part) { 
+           for (let y = 0; y < 412; y += part) {
+               ctx.lineWidth = 5;  
+               ctx.strokeStyle = "#FFF";
+               ctx.moveTo(0, y);
+               ctx.lineTo(412, y);
+               ctx.moveTo(x, 0);
+               ctx.lineTo(x, 412);
+            }
+       }
+       ctx.stroke();
+}
+
+var animationStep = 0;
+var IDX;
+function drawProgressIndicator(animationStep){
+	    //console.log("START", animationStep);
+	    ctx.save();
+	    ctx.clearRect(0, 0, canvas.width, canvas.height);
+	    ctx.translate(canvas.width / 2, canvas.height / 2);
+	    ctx.scale(0.4, 0.4);
+	    ctx.rotate(-Math.PI / 2);
+	    ctx.strokeStyle = "black";
+	    ctx.fillStyle = "white";
+	    ctx.lineWidth = 8;
+	    ctx.lineCap = "round";
+	    var step = animationStep;
+	    ctx.fillStyle = "black";
+	    ctx.save();
+	    ctx.rotate(step * Math.PI / 1000);
+	    ctx.strokeStyle = "#B9B8B8";
+	    ctx.fillStyle = "#B9B8B8";
+	    ctx.lineWidth = 10;
+	    ctx.beginPath();
+	    ctx.moveTo(0, 0);
+	    ctx.lineTo(68, 0);
+	    ctx.stroke();
+	    ctx.fill();
+	    ctx.restore();
+	    ctx.beginPath();
+	    ctx.lineWidth = 14;
+	    ctx.strokeStyle = "#4a90e2";//'rgba(55, 99, 176, 1)';
+	    ctx.arc(0, 0, 80, 0, Math.PI * 2, true);
+	    ctx.stroke();
+	    ctx.restore();
+	    animationStep += 1;
+            IDX = requestAnimationFrame(drawProgressIndicator);
+};
+
+
+
+//------------------->
+
+
+ws.onopen = function() {
+      console.log("connection was established");
+      ws.send(JSON.stringify({"Process": "ProcessPrep"}));
+      //seeBtLoad.style.display = "none";
+};
+
+function selectOnlyThis(id){
+  if (id.checked) {
+    B_type = id.value;
+  }
+  var myCheckbox = document.getElementsByName("typeBox");
+  Array.prototype.forEach.call(myCheckbox,function(el){
+  	el.checked = false;
+  });
+  id.checked = true;
+};
+var THHH;
+function getCont(x, y) {
+    console.log(">>>", x, B_type, y);
+    THHH = y;
+    ws.send(JSON.stringify({"Process": "SeeAllData", "SeeAllData": "ProcessPick", "collection_id":x, "SortType":B_type, "type":y}));
+    document.getElementById('SeeBox').style.display = "block";
+}
+
+function Close(x) {
+  console.log("Close", x);
+  b_popup.style.display = "none";
+  b_popup_content.removeChild(document.getElementById('div_stat'));
+  document.getElementById('SeeBox').style.display = "none";
+  document.location.reload(true);  
+}
+function getlist(zzz, zz, z, y, x){
+  //console.log(zzz, x, y);
+  ws.send(JSON.stringify({"Process": "SeeAllData", "SeeAllData": "ProcessStat", "collection_id":x, "C_name":y, "type":zzz}));
+  b_popup.style.display = "block";
+  
+  /*
+  document.getElementById('Info').style.display = "none";
+  document.getElementById('SeeBox').style.display = "block";
+  ws.send(JSON.stringify({"SeeAllData": "ProcessPick", "collection_id":x}));
+  */
+}
+
+seeBt.onclick = function my() {
+   seeBt.disabled = true;
+   seeBt.innerText='загрузка...';
+   //console.log(idxx, ans_v);
+   ws.send(JSON.stringify({"Process": "SeeAllData", "SeeAllData": "ProcessNext", "answ_v":ans_v, "idxx":idxx}));  
+
+}
+
+function del_coll(zz, z, x, y) {
+  //console.log(x, y);
+  document.getElementById(z).remove();
+  document.getElementById(zz).remove();
+  ws.send(JSON.stringify({"Process": "Delite", "Delite": "Delite", "idxx":x, "C_name":y}));
+};
+function prep_coll(x, y) {
+  //console.log("PREP",x, y);
+  ws.send(JSON.stringify({"Process": "GetAns", "GetAns": "GetAns", "idxx":x, "C_name":y}));
+  b_popup.style.display = "block";
+  b_popup.innerHTML = "<div id='b-popup-content'>Подождите...</div>";
+
+}
+
+function create_st(x) {
+  var temp_div = document.createElement("div");
+  //var g =  JSON.stringify(x)
+  //console.log(x);
+  temp_div.innerHTML = "Ответ: " + x.answ.toString() +
+                       " Ответ H: " + x.answ_H.toString() + 
+                       " Ответ L: " + x.answ_L.toString() + 
+                       " Ответ YOLO: " + x.answ_V.toString();
+  document.getElementById('div_stat').appendChild(temp_div);
+};
+
+
+ws.onmessage = function(data) {
+   sjs = JSON.parse(data.data);
+   //for (var i = 0; i < coorAns.length; i++)
+   if (sjs["Process"]=="Stat"){
+       //console.log("SARRRRRR", sjs)
+       var temp_div = document.createElement("div");
+       temp_div.id = "div_stat"
+       var temp = document.createElement("div");
+       temp.id = "div_stat";
+       temp.innerHTML = "<div>Все ответы: <b>"
+                        + sjs["all_len"] + "</b></div><div>Ответы работников: <b>" 
+                        + sjs["ans_h_len"] + "</b></div><div>Ответы YOLO: <b>" 
+                        + sjs["ans_v_len"] + "</b></div><div>Ответы Леонида: <b>" 
+                        + sjs["ans_l_len"] + "</b></div><div>Проверенные: <b>" 
+                        + sjs["ans_len"]+"</b></div>";
+       temp_div.appendChild(temp);
+       temp = document.createElement("a");
+       temp.id = "gtC";
+       temp.innerHTML = "начать проверку";
+       
+       div_for_check = document.createElement('div'); 
+       div_for_check.id = "typeBox";
+       div_for_check.innerHTML = "<h3>Способ сортировки</h3>"
+       //-------------------_>
+       div_1  = document.createElement('div'); 
+       div_check_box = document.createElement('input'); 
+       div_check_box.type = "checkbox"; 
+       div_check_box.type = "checkbox"; 
+       div_check_box.name = "typeBox"; 
+       div_check_box.value = "H"; 
+       div_check_box.setAttribute("onclick", "selectOnlyThis(this)"); //onclick="selectOnlyThis(this)"
+       div_check_box.id = "id"; 
+       var label = document.createElement('label');
+       label.htmlFor = "id"; 
+       label.appendChild(document.createTextNode('вариант Работники')); 
+       div_1.appendChild(div_check_box);
+       div_1.appendChild(label);
+       div_for_check.appendChild(div_1);
+       //------------------------->
+       div_2  = document.createElement('div');
+       div_check_box = document.createElement('input'); 
+       div_check_box.type = "checkbox"; 
+       div_check_box.type = "checkbox"; 
+       div_check_box.name = "typeBox"; 
+       div_check_box.value = "L"; 
+       div_check_box.setAttribute("onclick", "selectOnlyThis(this)");
+       div_check_box.id = "id"; 
+       var label = document.createElement('label');
+       label.htmlFor = "id"; 
+       label.appendChild(document.createTextNode('вариант Леонид')); 
+       div_2.appendChild(div_check_box);
+       div_2.appendChild(label);
+       div_for_check.appendChild(div_2);
+       //------------------------->
+       div_3  = document.createElement('div');
+       div_check_box = document.createElement('input'); 
+       div_check_box.type = "checkbox"; 
+       div_check_box.type = "checkbox"; 
+       div_check_box.name = "typeBox"; 
+       div_check_box.value = "N+"; 
+       div_check_box.setAttribute("onclick", "selectOnlyThis(this)");
+       div_check_box.id = "id"; 
+       var label = document.createElement('label');
+       label.htmlFor = "id"; 
+       label.appendChild(document.createTextNode('вариант новый положительный')); 
+       div_3.appendChild(div_check_box);
+       div_3.appendChild(label);
+       div_for_check.appendChild(div_3);
+       //------------------------->
+       div_4  = document.createElement('div');
+       div_check_box = document.createElement('input'); 
+       div_check_box.type = "checkbox"; 
+       div_check_box.type = "checkbox"; 
+       div_check_box.name = "typeBox"; 
+       div_check_box.value = "N-"; 
+       div_check_box.setAttribute("onclick", "selectOnlyThis(this)");
+       div_check_box.id = "id"; 
+       var label = document.createElement('label');
+       label.htmlFor = "id"; 
+       label.appendChild(document.createTextNode('вариант новый отрицательный')); 
+       div_4.appendChild(div_check_box);
+       div_4.appendChild(label);
+       div_for_check.appendChild(div_4);
+       //------------------------->
+       
+       
+       temp.setAttribute("onclick", "getCont('"+ sjs["collection"] +"','" + sjs["type"] +"')");
+       temp_div.appendChild(div_for_check);
+       temp_div.appendChild(temp);
+       
+       b_popup_content.appendChild(temp_div);
+       
+   }
+   if (sjs["Process"]=="ProcessPrep"){
+           for (let x=0; x<sjs["list"].length; x++ ) {
+               
+               if (sjs["list"][x]["imageType"] == "original"){
+                       //console.log(sjs["list"][x]["type"]); //["list"][x]["imageType"]
+                       var temp = document.createElement("li");
+                       temp.id = "li_id_"+x;
+
+                       temp.innerHTML = sjs["list"][x]["collectionName"];
+                       temp.setAttribute("onclick", "getlist('"+ sjs["list"][x]["type"] +"','"+ x +"','"+ x +"','"+ sjs["list"][x]["_id"] +"','"+ sjs["list"][x]["collectionName"]+"')");
+                       //var textnode = document.createTextNode(sjs["list"][x]["collectionName"]);
+                       //temp.appendChild(textnode);
+                       
+                       /**/
+                       var div_c = document.createElement("div");
+                       div_c.id = "bloc_prep_"+x;
+                       div_c.className = "bloc_prep_"
+                       
+                       var temp_a = document.createElement("a");
+                       temp_a.innerHTML = "обработать";
+                       temp_a.id = "prep_a";
+                       temp_a.setAttribute("onclick", "prep_coll('"+ sjs["list"][x]["_id"] +"','"+ sjs["list"][x]["collectionName"]+"')");
+                       
+                       var temp_del = document.createElement("a");
+                       temp_del.innerHTML = "удалить";
+                       temp_del.id = "prep_del";
+                       temp_del.setAttribute("onclick", "del_coll('"+ temp.id +"','"+div_c.id +"','"+ sjs["list"][x]["_id"] +"','"+ sjs["list"][x]["collectionName"]+"')");  
+
+                            
+                       //div_c.appendChild(temp_a); 
+                       //div_c.appendChild(temp_del);      
+                                            
+                       
+                       var list_coll = document.getElementById('list_db');
+                       
+                       list_coll.appendChild(temp); 
+                       
+                       list_coll.appendChild(div_c); 
+               };
+
+           }
+   } if (sjs["GetAns"]=="Final"){
+         b_popup.style.display = "none";
+         document.location.reload(true);            
+   } else {
+           idxx = sjs["_id"];
+           taskS.style.display = "block";
+           var arrayBuffer = "data:image/jpeg;base64,"+ sjs["image"];
+           img.src = arrayBuffer;
+           
+           if (sjs["type"]==3) {
+               ans_v = [0,0,0,0,0,0,0,0,0];
+           } else if (sjs["type"]==4) {
+               ans_v = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+           } else { 
+               ans_v = [0]; 
+           };
+           
+           img.onload = function(){
+                  //console.log(sjs["list_answ"].length);
+                  canvas.style.display = "block";
+	          canvas.width = img.width;
+                  canvas.height = img.height;
+                  //if (sjs["type"] != 
+                  part = 412/sjs["type"];
+                  coorAns = [];
+	          for (let y = 0; y < 412; y += part) {
+	            for (let x = 0; x < 412; x += part) { 
+	                coorAns.push([x, y, x+part, y+part]);
+	            }
+	          }
+                  //ans_v = [0,0,0,0,0,0,0,0,0];
+                  //ans_v = [0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0];
+                  console.log(">>SSAD",sjs["_id"].length);
+                  if (THHH == 1 || THHH == 3) {
+                  document.getElementById('div_stat').innerHTML = sjs["temp_idx_s"] + " - " + sjs["temp_idx_f"] + " Из: " + sjs["all_len_work"];
+                  for (var x = 0; x < sjs["answ_V"].length; x++) {
+                      ans_v[sjs["answ_V"][x]-1] = 1;
+                  }
+                  for (var x = 0; x < sjs["_id"].length; x++) {
+                      create_st(sjs["list_answ"][x])
+                  }
+                  //console.log(ans_v, sjs["answ_V"].length);
+
+                  } else {
+                  document.getElementById('div_stat').innerHTML = sjs["temp_idx"]  + " Из: " + sjs["all_len_work"];
+                  for (var x = 0; x < sjs["answ_V"].length; x++) {
+                      ans_v[sjs["answ_V"][x]-1] = 1;
+                      //create_st(sjs["list_answ"][x])
+                  
+                  }
+                    var temp_div = document.createElement("div");
+                    temp_div.innerHTML = "Ответ: " + sjs["list_answ"].answ.toString() +
+                                       " Ответ H: " + sjs["list_answ"].answ_H.toString() + 
+                                       " Ответ L: " + sjs["list_answ"].answ_L.toString() + 
+                                       " Ответ YOLO: " + sjs["list_answ"].answ_V.toString();
+                  document.getElementById('div_stat').appendChild(temp_div);
+                  }
+                  drawProgressIndicator(animationStep);
+
+                  setTimeout(()=>{
+                        cancelAnimationFrame(IDX);
+                        showANSW(ans_v, 'white');//'rgba(55, 99, 176, 1)');
+		        seeBt.disabled = false;
+		        seeBt.innerText='дальше';
+		        //seeBt.innerText='назад';
+		        //document.getElementById('div_stat').innerHTML = sjs["list_answ"];
+
+	          },50)
+                  //seeBt.disabled = false;
+                  //var animationStep = 0;
+                  //drawProgressIndicator(animationStep);
+                  
+                  taskS.innerHTML = sjs["task"];
+           }
+   };
+};
+   
+canvas.addEventListener("click", function (evt) {
+   var mousePos = getMousePos(canvas, evt);
+   var answ = getAnswHuman(mousePos);
+   //console.log(answ)
+   if (ans_v[answ] == 0) { 
+      ans_v[answ] = 1;
+      //console.log("ON", ans_v);
+      showANSW(ans_v, 'white');//'rgba(55, 99, 176, 1)');
+   } else {
+      ans_v[answ] = 0;
+      //console.log("OFF", ans_v);
+      showANSW(ans_v, 'white');//'rgba(55, 99, 176, 1)');
+   };
+}, false);
+   
+   
+
+</script>
+<style type="text/css" media="screen">
+
+#ButtBack {
+    font-size: 18px;
+    color: #ffffff;
+    padding: 5px;
+    background:#507299;
+    cursor: pointer;
+    position: absolute;
+    display: block;
+    text-decoration: none;
+}
+
+
+.bloc_prep_ a:hover{
+ background:#3ab163;
+ color: white;
+ cursor: pointer;
+}
+
+
+#gtC{
+    margin: 10px 0px;
+    display: block;
+    text-align: center;
+    background:#717171;
+    padding: 5px;
+    color: white;
+    cursor: pointer;
+}
+#typeBox h3 {
+margin: 10px 0px 10px 0px;
+}
+
+#list_db a{
+margin: 0px 29px 0px 0px;
+}
+
+
+.pv_close_btn {
+    background-image: url('/pv_layer_controls.png');
+    width: 16px;
+    height: 16px;
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    background-position: -3px 0px;
+    opacity: 0.5;
+    transition: opacity 100ms linear;
+    cursor: pointer;
+    }
+
+
+
+
+
+#b-popup{
+    width:100%;
+    min-height:100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow:hidden;
+    position:fixed;
+    top:0px;
+}
+#b-popup #b-popup-content{
+    margin:40px auto 0px auto;
+    min-width: 100px;
+    max-width: 436px;
+    padding:10px;
+    background-color: #c5c5c5;
+    border-radius:5px;
+}
+
+
+
+#Info ul li{
+     cursor:pointer;
+     background-color: #ffffff;
+     margin: 5px 0px;
+}
+#Info ul li:hover{
+     background-color: #dce0ee;
+}
+
+#SeeDataButt {
+    background: 
+#559748;
+border: 0;
+border-radius: 2px;
+color:
+    #fff;
+    cursor: pointer;
+    font-family: Roboto,helvetica,arial,sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    height: 42px;
+    line-height: 42px;
+    min-width: 100px;
+    padding: 0 10px 0 10px;
+    text-align: center;
+    text-transform: uppercase;
+    transition: all 0.5s ease;
+    margin: 20px 0 0 0;
+    width: 100%;
+}
+
+
+#task {
+    background: #4a90e2;
+    color: white;
+    padding: 10px;
+    font-size: 22px;
+    text-align: center;
+    margin-bottom:16px;
+}
+
+
+#Info .cc {
+    width: 50%;
+    margin-bottom: 6px;
+    display: block;
+    float: left;
+}
+
+
+#Info {
+        display: block;
+        margin: 0 auto;
+        width: 416px;
+        position: relative;
+}
+
+#cc_color0 {
+    margin: 5px;
+    cursor: pointer;
+    width: 60px;
+    height: 60px;
+    border: 1px #333 solid;
+    background: rgba(55, 99, 176, 0.4);
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+    float: left;
+    display: block;
+}
+#cc_color1{
+    margin: 5px;
+    cursor: pointer;
+    width: 60px;
+    height: 60px;
+    border: 1px #333 solid;
+    background: rgba(103, 184, 95, 0.4);
+    -webkit-border-radius: 6px;
+    -moz-border-radius: 6px;
+    border-radius: 6px;
+    float: left;
+    display: block;
+}
+
+
+#SeeBox {
+    font-family: Arial;
+    background: #FFF;
+    padding: 20px;
+    position: relative;
+    height: auto;
+    width: 412px;
+    border: 1px solid #DFDFDF;
+    -webkit-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -webkit-border-radius: 11px;
+    -moz-border-radius: 11px;
+    border-radius: 11px;
+    margin: 0 auto;
+}
+
+</style>
+

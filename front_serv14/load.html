@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+		<title>скачать </title>
+	</head>
+<a href="/" id="ButtBack">назад</a>
+  <body style="margin: 0;color: #9d9d9d;background: #fafafa!important;font-family:Arial;">
+<div id="SeeBox">
+    <div style="margin-bottom: 10px;">
+    <label>Выберите тип: </label>                            
+    <input type="checkbox" id="typeBox" name="typeBox" value="4" onclick="selectOnlyThis(this)">
+    <label for="typeBox">4x4</label>
+    <input type="checkbox" id="typeBox" name="typeBox" value="3" onclick="selectOnlyThis(this)">
+    <label for="typeBox">3x3</label>
+    </div> 
+    <select id="SE">
+    </select>
+
+    <button id='SeeDataButt'>запрос</button>
+    <div id="task"></div>
+</div>
+<div id="b-popup">
+</div>
+
+<script>
+      String.prototype.unescapeHtml = function () {
+          var temp = document.createElement("div");
+          temp.innerHTML = this;
+          var result = temp.childNodes[0].nodeValue;
+          temp.removeChild(temp.firstChild);
+          return result;
+      }
+      var b_popup = document.getElementById('b-popup');
+      b_popup.style.display = "none";
+      
+      var text = '{{items}}';
+      var obj = JSON.parse(text.unescapeHtml());
+      
+      var B_type;
+      
+Object.size = function(obj) {
+    var size = 0, key;
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) size++;
+    }
+    return size;
+};
+		      var HJ = document.getElementById("SE");
+		      HJ.options = new Option()
+		      for (let x = 0; x < Object.keys(obj).length; x ++) {
+
+                          //HJ.options[x] = new Option(Object.keys(obj)[x], obj[Object.keys(obj)[x]]);
+                          
+                          if (x==0) {
+                                HJ.innerHTML += '<optgroup label="4x4">'
+                          } else {
+                                HJ.innerHTML += '<optgroup label="3x3/2x4">'
+                          }
+                          var size = Object.size(Object.values(obj)[x]);
+		          console.log(size);
+		          //var new_t = Object.entries(Object.values(obj)[x]);
+		          var new_t = Object.values(obj)[x];
+		          new_t = Object.values(new_t);
+		          //console.log(new_t);
+                          for(var n = 0; n<size; n++ ) { 
+                             //console.log(new_t[n]);
+                             //HJ.options[n] = new Option(new_t[n], new_t[n]); 
+                             var newOption = new Option(new_t[n], new_t[n]); 
+                             HJ.append(newOption)
+                             //HJ.options[n] = new_t[n];
+		          }
+			  //HJ.options[x] = new Option(Object.keys(obj)[x], obj[Object.keys(obj)[x]]);
+			  /*for( var n in Object.values(obj)[x] ) { console.log(n); 
+		             HJ.options[x] = new Option(n, n);
+		          }*/
+		          
+			  //console.log(HJ.options[x].value);
+		      };
+      
+      function updateTextInput(x) {
+            document.getElementById('COL').innerHTML = x;
+            var btn = document.createElement("BUTTON");
+            btn.setAttribute("id", "btn_id");
+            btn.setAttribute("onclick", "doDownload("+ x +")");
+            btn.innerHTML = "скачать"; 
+            if (task.childNodes.length == 1) {
+
+              task.appendChild(btn);
+            } else {
+               task.replaceChild(btn, task.lastElementChild);
+            };
+      };
+      function doDownload(x) {
+            var btn = document.getElementById("btn_id").style.display = "none";        
+            var http = new XMLHttpRequest();
+            http.open("POST", "http://178.158.131.41:8880/load");
+            http.setRequestHeader("Content-type","application/json; charset=utf-8");
+	    http.onreadystatechange = function (){
+		if(http.readyState == 4){
+                        //console.log(http.responseText);
+                        var s = JSON.parse(http.responseText);
+                        console.log(s["csv"], s["arch"]);
+                        var btn = document.createElement("a");
+                        btn.href = "http://178.158.131.41:8880/"+s["csv"];
+                        btn.innerHTML = s["csv"];
+                        task.appendChild(btn);
+                     
+                };
+		
+	    };
+            http.send(JSON.stringify({"st":"load", "task":HJ.options[HJ.selectedIndex].text, "load_count":x}));
+      };
+//------------------------------->
+function calculateCheckbox() {
+  var el = document.getElementById('SeeBox');
+
+  var products = el.getElementsByTagName('input');
+
+  var len = products.length;
+
+  for (var i = 0; i < len; i++) {
+    if (products[i].type === 'checkbox') {
+        if (products[i].checked == true){
+            B_type = products[i].value;
+         };
+      };
+  }
+  
+}
+
+
+function selectOnlyThis(id){
+  if (id.checked) {
+    B_type = id.value;
+    //console.log(id.value);
+  }
+  var myCheckbox = document.getElementsByName("typeBox");
+  Array.prototype.forEach.call(myCheckbox,function(el){
+  	el.checked = false;
+  });
+  id.checked = true;
+};
+
+//------------------------------->
+
+      var BTgo = document.getElementById('SeeDataButt');
+      BTgo.onclick = function(){
+            calculateCheckbox();
+            var result = HJ.options[HJ.selectedIndex].value;
+            var newKey = HJ.options[HJ.selectedIndex].text;
+            console.log(result, newKey); 
+            var http = new XMLHttpRequest();
+            http.open("POST", "http://178.158.131.41:8880/load");
+            http.setRequestHeader("Content-type","application/json; charset=utf-8");
+	    http.onreadystatechange = function (){
+		if(http.readyState == 4){
+                        var s = JSON.parse(http.responseText);
+                        console.log(s);
+                        if (s["type"]==1){
+                           var btn = document.createElement("a");
+                           btn.href = "http://178.158.131.41:8880/"+s["arch"];
+                           btn.innerHTML = s["arch"];
+                           document.getElementById('task').appendChild(btn);
+                           b_popup.style.display = "none";
+                        } else {
+                           var btn = document.createElement("a");
+                           btn.href = "http://178.158.131.41:8880/"+s["arch"];
+                           btn.innerHTML = s["arch"];
+                           document.getElementById('task').appendChild(btn);
+                         /* */
+                        
+                           var btn1 = document.createElement("a");
+                           btn1.href = "http://178.158.131.41:8880/"+s["csv"];
+                           btn1.innerHTML = s["csv"];
+                           document.getElementById('task').appendChild(btn1);
+                           b_popup.style.display = "none";
+                        }
+                       /* */
+                      
+                     
+                };
+		
+	    };
+	    //console.log("START");
+	                                            if (B_type==undefined){
+                                                      alert("Выберите тип")
+                                                    } else {
+                                                    
+                                                      b_popup.style.display = "block";
+                                                      b_popup.innerHTML = "<div id='b-popup-content'>Подождите...</div>";
+                                                      http.send(JSON.stringify({"st":"prep", "task":newKey, "type":B_type}));
+                                                    }
+	    
+	    
+            
+      };
+</script>
+</body>
+
+<style type="text/css" media="screen">
+
+#ButtBack {
+    font-size: 18px;
+    color: #ffffff;
+    padding: 5px;
+    background:#507299;
+    display: block;
+    cursor: pointer;
+    position: absolute;
+    text-decoration: none;
+    top: 16px;
+}
+
+#b-popup{
+    width:100%;
+    min-height:100%;
+    background-color: rgba(0,0,0,0.5);
+    overflow:hidden;
+    position:fixed;
+    top:0px;
+}
+#b-popup #b-popup-content{
+    margin:40px auto 0px auto;
+    min-width: 100px;
+    max-width: 436px;
+    padding:10px;
+    background-color: #c5c5c5;
+    border-radius:5px;
+}
+
+
+#task a {
+    display: block;
+    color: white;
+    background: #507299;
+    margin: 5px 0px;
+    padding: 3px;
+    text-align: center;
+    text-decoration: none;
+}
+#task a:hover {
+    display: block;
+    color: white;
+    background: #5a6868;
+    margin: 5px 0px;
+    padding: 3px;
+    text-align: center;
+    text-decoration: none;
+}
+
+
+#SeeBox span{
+font-weight: bold;
+}
+
+#SeeBox {
+    font-family: Arial;
+    background: #FFF;
+    padding: 20px;
+    position: relative;
+    height: auto;
+    width: 412px;
+    border: 1px solid #DFDFDF;
+    -webkit-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -moz-box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    box-shadow: 0px 0px 16px 0px rgba(0,0,0,0.2);
+    -webkit-border-radius: 11px;
+    -moz-border-radius: 11px;
+    border-radius: 11px;
+    margin: 0 auto;
+    top: 20px;
+}
+
+</style>
+</html>
