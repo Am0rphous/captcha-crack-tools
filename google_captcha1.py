@@ -19,6 +19,7 @@ import json
 import os
 import ast
 import io
+import base64
 #from data_base_work import DataBase
 from bson.objectid import ObjectId
 import scipy.interpolate as si
@@ -124,6 +125,29 @@ def human_like_mouse_move(action, start_element):
 #def main():
 def ocr(x):
    pass
+ 
+def imgs(x):
+    cv2.imshow("Image", x) 
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+   
+def cutimg(data, col):
+	if True:
+                im_w, im_h, im_c = data.shape
+                w, h = im_w//col, im_h//col
+                w_num, h_num = int(im_w/w), int(im_h/h)
+                num = 0
+                ls = []
+                try: 
+                        #print "post>"
+                        for wi in range(0, w_num):
+                           for hi in range(0, h_num):
+                                num += 1
+                                
+                                imgs(data[wi*w:(wi+1)*w, hi*h:(hi+1)*h, :])
+                        return ls
+                except IndexError: 
+                   pass    
 if __name__ == "__main__":
         #classdb = DataBase()
         proxy = my_proxy("127.0.0.1", 9050)
@@ -190,24 +214,40 @@ if __name__ == "__main__":
         #print ("NEXT>>>>>>>>>>>>>>>>>>", proxy.page_source)
         html = proxy.page_source
         soup = BeautifulSoup(html, features = "html.parser")
-        J = soup.find_all('div', {"class": "rc-imageselect-tile"})
+        J = soup.find_all('td', {"class": "rc-imageselect-tile"})
         JJ = soup.find('img', {"class" : "rc-image-tile-33"})
         JJJ = soup.find('img', {"class" : "rc-image-tile-44"})
         #print (html, len(J), JJ, JJJ)#["src"]
         t_temp = ""
+        t_type = ""
         if JJ != None:
            t_temp = JJ["src"]
+           t_type = 3
            #print (JJ["src"])
         if JJJ != None: 
-           t_temp = JJJ["src"]  
+           t_temp = JJJ["src"] 
+           t_type = 4 
            #print (JJJ["src"])#
         Sess = RequestLib()
         Sess.headers['User-agent'] = UserAgent().random
         response = Sess.get(t_temp)
-        print (t_temp, response)
+        print (t_temp, response, len(J), t_type)
         if response.status_code == 200:
-           with open("t_temp.jpg", 'wb') as fli:
-               fli.write(response.content)  
+           #jpg_original = base64.b64decode(response.content)
+           nparr = np.fromstring(response.content, np.uint8)
+           img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+           #print (img_np.shape)
+           
+           ids = proxy.find_elements_by_xpath('//td[@class="rc-imageselect-tile"]')
+           #btn_t = WebDriverWait(proxy, 4).until(EC.element_to_be_clickable((By.XPATH ,'//td[@class="rc-imageselect-tile"]')))
+          
+           ids[3].click()
+           #cutimg(img_np, t_type)
+            
+           #imgr = cv2.imread(response.content)
+           print (ids[3],len(ids))
+           #with open("t_temp.jpg", 'wb') as fli:
+           #    fli.write(response.content)  
         #time.sleep(20)
         #self.wait_between(LONG_MIN_RAND, LONG_MAX_RAND) # wait again
         #--->verify_button.click()
