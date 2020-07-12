@@ -237,7 +237,9 @@ if __name__ == "__main__":
            nparr = np.fromstring(response.content, np.uint8)
            img_np = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
            #print (img_np.shape)
-           
+           #div class rc-imageselect-desc-no-canonical
+           #stexx = proxy.find_element_by_class_name("imageselect-desc-no-canonical").text
+           stexx = proxy.find_elements_by_xpath('//div[@class="rc-imageselect-desc-no-canonical"]')
            ids = proxy.find_elements_by_xpath('//td[@class="rc-imageselect-tile"]')
            #btn_t = WebDriverWait(proxy, 4).until(EC.element_to_be_clickable((By.XPATH ,'//td[@class="rc-imageselect-tile"]')))
           
@@ -245,7 +247,7 @@ if __name__ == "__main__":
            #cutimg(img_np, t_type)
             
            #imgr = cv2.imread(response.content)
-           print (ids[3],len(ids))
+           print (ids[3],len(ids), stexx[0].text.split("\n")[1])
            #with open("t_temp.jpg", 'wb') as fli:
            #    fli.write(response.content)  
         #time.sleep(20)
